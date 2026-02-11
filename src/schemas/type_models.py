@@ -10,6 +10,7 @@ class SourceDocument(BaseModel):
     filename: str
     uploaded_at: datetime
     page_count: int | None = None
+    last_page: int | None = None
 
 
 class TextChunk(BaseModel):

@@ -4,15 +4,21 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 authors = [
-    { name = "LukaPerkovic", email = "luka.m.perkovic@gmail.com" }
+    { name = "LukaPerkovic" }
 ]
 requires-python = ">=3.11"
 dependencies = [
     "pydantic>=2.12.5",
+    "pymupdf>=1.26.7",
+    "python-dotenv>=1.2.1",
 ]
 
 [project.scripts]
-taier = "taier:main"
+taier = "taier:src.main"
+
+[tool.uv.build-backend]
+module-name = "src"
+module-root = ""
 
 [build-system]
 requires = ["uv_build>=0.9.29,<0.10.0"]
