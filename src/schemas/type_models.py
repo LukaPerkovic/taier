@@ -1,6 +1,6 @@
 import uuid
 
-from datetime import datetime
+from pathlib import Path
 
 from pydantic import BaseModel, Field
 
@@ -8,9 +8,10 @@ from pydantic import BaseModel, Field
 class SourceDocument(BaseModel):
     id: uuid.UUID = Field(default_factory=uuid.uuid4)
     filename: str
-    uploaded_at: datetime
+    filepath: Path
     page_count: int | None = None
-    last_page: int | None = None
+    start_page: int | None = None
+    end_page: int | None = None
 
 
 class TextChunk(BaseModel):
