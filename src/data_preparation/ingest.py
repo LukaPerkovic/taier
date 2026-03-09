@@ -1,8 +1,8 @@
 import pymupdf
 
-from typing import Any, Generator
-
+from collections.abc import Mapping
 from enum import Enum
+from typing import Any, Generator
 
 from src.data_preparation.text_cleaning import TextProcessor
 from src.schemas.type_models import SourceDocument, TextChunk
@@ -14,7 +14,7 @@ class ChunkOptions(Enum):
     WORD = "words"
 
 
-def skip_content_dynamic(text: str, rules: list[tuple[str, int | float]]) -> bool:
+def skip_content_dynamic(text: str, rules: Mapping[str, int | float]) -> bool:
     """
     Sometimes there's a number of unwanted characters in the page
     that makes skipping page a better option. In other cases, some undesired pages
@@ -29,7 +29,7 @@ def skip_content_dynamic(text: str, rules: list[tuple[str, int | float]]) -> boo
     :return: Skippable yes/no
     :rtype: bool
     """
-    return any(text.count(substr) > threshold for substr, threshold in rules)
+    return any(text.count(substr) > threshold for substr, threshold in rules.items())
 
 
 def extract_chunk(page: pymupdf.Page, chunk_type: ChunkOptions) -> list[Any]:
@@ -45,8 +45,8 @@ def chunk_doc(
     source: SourceDocument,
     processor: TextProcessor,
     chunk_type: ChunkOptions = ChunkOptions.PAGE,
-    skip_rules: list[tuple[str, int | float]] = [],
-) -> Generator[TextChunk]:
+    skip_rules: Mapping[str, int | float] = {},
+) -> Generator[TextChunk, None, None]:
     doc = pymupdf.open(source.filepath)
 
     page_id = 1

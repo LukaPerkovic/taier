@@ -1,29 +1,61 @@
+import re
+
+from typing import Callable
 from collections.abc import Mapping
 
 
 class TextProcessor:
-    def __init__(self, remove: list = [], replace: dict[str | int, str] = {}):
-        self.table = self._make_table(remove, replace)
+    """
+    Cleans the text. It maps what needs to be removed and what needs to be replaced.
+    Removal is a list of characters needed to be removed, while replacement involves a dictionary
+    with original and desired value pairs.
 
-    def __repr__(self) -> str:
-        return (
-            f"{type(self).__name__} class with the following cleaning table:\n\n"
-            f"{self.table}"
-        )
+    :param replace: Dictionary where key is a string which needs to be replaced, and value
+                being the final value. It is possible to also specify a removal via replacment
+                by setting value as None.
+    :param remove: For explicit removal, this argument accepts a list of targeted items and will
+                overwrite the replacement dictionary if it exists.
+    :param udfs: Tuple containing custom user defined functions to be applied over text.
+    :param udfs_first: If True user defined functions will be applied before replacement and removal.
+                       False will apply them as the final step.
+    """
 
-    def _make_table(
-        self, remove: list, replace: dict[str | int, str]
-    ) -> Mapping[int, str | None]:
-        if remove is None and replace is None:
-            raise ValueError(
-                "Either removal list or replacement list must be provided. "
-                "Both cannot be absent!"
-            )
+    def __init__(
+        self,
+        replace: Mapping[str, str | None] = {},
+        remove: tuple[str] | None = None,
+        udfs: tuple[Callable] | None = None,
+        udfs_first: bool = True,
+        case_insensitive: bool = False,
+    ):
+        self.udfs = udfs
+        self.udfs_first = udfs_first
+        self.t_map: Mapping[str, str] = {}
+        self.case_insensitive = case_insensitive
 
-        removal_table = str.maketrans({k: None for k in remove})
-        replacement_table = str.maketrans(replace)
+        if replace:
+            for k, v in replace.items():
+                if v is None:
+                    v = ""
+                self.t_map[str(k)] = str(v)
 
-        return removal_table | replacement_table
+        if remove:
+            self.t_map |= {str(item): "" for item in remove}
 
     def clean(self, text: str) -> str:
-        return text.translate(self.table)
+
+        if self.udfs and self.udfs_first:
+            for f in self.udfs:
+                text = f(text)
+
+        for k, v in self.t_map.items():
+
+            text = re.sub(
+                k, v, text, flags=0 if not self.case_insensitive else re.IGNORECASE
+            )
+
+        if self.udfs and not self.udfs_first:
+            for f in self.udfs:
+                text = f(text)
+
+        return text
