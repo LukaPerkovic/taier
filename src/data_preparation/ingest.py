@@ -1,4 +1,6 @@
+import logging
 import pymupdf
+import pymupdf4llm
 
 from collections.abc import Mapping
 from enum import Enum
@@ -47,11 +49,31 @@ def chunk_doc(
     chunk_type: ChunkOptions = ChunkOptions.PAGE,
     skip_rules: Mapping[str, int | float] = {},
 ) -> Generator[TextChunk, None, None]:
-    doc = pymupdf.open(source.filepath)
 
-    page_id = 1
+    # doc = pymupdf.open(source.filepath)
+    doc = pymupdf4llm.to_markdown(source.filepath, header=False, footer=False)
+
+    pages = doc.page_count
+
+    if (source.page_count and source.page_count != pages) and (
+        source.start_page or source.end_page
+    ):
+        logging.warn(
+            "Actual page count is different provided! "
+            "Using actual info to determine page intervals."
+        )
+        source.page_count = pages
+
+    start_page = 0 if not source.start_page else source.start_page
+    end_page = pages if not source.end_page else source.end_page
+
+    page_id = 0
     chunk_id = 1
     for page in doc:
+        page_id += 1
+        print(page_id, start_page, end_page, page_id < start_page or page_id > end_page)
+        if page_id < start_page or page_id > end_page:
+            continue
         for chunk in extract_chunk(page, chunk_type):
 
             if chunk_type == ChunkOptions.PAGE and skip_content_dynamic(
@@ -70,5 +92,4 @@ def chunk_doc(
                 page_number=page_id,
                 embedding=[1, 1],
             )
-
-        chunk_id += 1
+            chunk_id += 1

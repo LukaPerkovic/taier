@@ -30,30 +30,33 @@ class TextProcessor:
     ):
         self.udfs = udfs
         self.udfs_first = udfs_first
-        self.t_map: Mapping[str, str] = {}
         self.case_insensitive = case_insensitive
+
+        self._t_map: Mapping[str, str] = {}
 
         if replace:
             for k, v in replace.items():
                 if v is None:
                     v = ""
-                self.t_map[str(k)] = str(v)
+                self._t_map[str(k)] = str(v)
 
         if remove:
-            self.t_map |= {str(item): "" for item in remove}
+            self._t_map |= {str(item): "" for item in remove}
 
     def clean(self, text: str) -> str:
 
+        # Running UDFS in the beginning
         if self.udfs and self.udfs_first:
             for f in self.udfs:
                 text = f(text)
 
-        for k, v in self.t_map.items():
+        for k, v in self._t_map.items():
 
             text = re.sub(
                 k, v, text, flags=0 if not self.case_insensitive else re.IGNORECASE
             )
 
+        # Running UDFS in the end
         if self.udfs and not self.udfs_first:
             for f in self.udfs:
                 text = f(text)
